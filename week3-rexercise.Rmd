@@ -1,0 +1,73 @@
+---
+title: "Exercise 3"
+output: html_document
+date: '2022-05-06'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Task 1: Import Data and Segmentation
+```{r}
+library(readr)        # to import tabular data (e.g. csv)
+library(ggplot2)      # to visualize data
+library(dplyr)        # to manipulate (tabular) data
+caro <- read_delim("caro60.csv",",")
+caro
+ggplot(caro, aes(E,N))+
+  geom_point()+
+  geom_path()+
+  labs(title= "Caros Trajectory")
+```
+
+
+Guidelines for Segmentation of trajectories:
+1. Specify a temporal windows v for in which to measure Euclidean distances
+  ->The sampling rate is 1min and the temporal window v should be 6min = +/- 3min
+2. Measure the distance from every point to every other point within this         temporal window (v)
+3. Remove “static points”: These are points where the average distance is less     than a given threshold. This segments the trajectory into subtrajectories
+  -> Distances under the mean distance value are considered static in this example
+4. Now remove short subtrajectories: These are trajectories with a short          duration (whereas “short” is tbd)
+```{r}
+## 2. Measure distance between points ##
+caro <- caro %>%
+  mutate(
+    nMinus3 = sqrt((lag(E,3)-E)^2+(lag(N,3)-N)^2),   # distance to pos -3min
+    nMinus2 = sqrt((lag(E,2)-E)^2+(lag(N,2)-N)^2),   # distance to pos -2 min
+    nMinus1 = sqrt((lag(E,1)-E)^2+(lag(N,1)-N)^2),   # distance to pos -1 min
+    nPlus1  = sqrt((E-lead(E,1))^2+(N-lead(N,1))^2), # distance to pos +1 min
+    nPlus2  = sqrt((E-lead(E,2))^2+(N-lead(N,2))^2), # distance to pos +2 min
+    nPlus3  = sqrt((E-lead(E,3))^2+(N-lead(N,3))^2)  # distance to pos +3 min
+  )
+
+## Calculate mean distance ##
+caro <- caro %>%
+  rowwise() %>%
+  mutate(
+    stepMean = mean(c(nMinus2, nMinus1,nPlus1,nPlus2))
+  ) %>%
+  ungroup() 
+
+```
+Task 2: Specify and apply threshold d
+```{r}
+
+## 3. Remove static points ##
+caro <- caro %>%                            
+  ungroup() %>%
+  mutate(static = stepMean < mean(stepMean, na.rm = TRUE)) #Boolean for < mean distance in a new colum
+
+
+caro_filter <- caro %>%
+  filter(!static)         #filters for row with static != TRUE (distances higher than mean distance)
+
+caro_filter%>%
+  ggplot(aes(E, N))  +
+  geom_path() +
+  geom_point() +
+  coord_fixed() +
+  theme(legend.position = "bottom")+
+  labs(title = "Caros segmented Trajectory")
+```
+
