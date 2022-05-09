@@ -79,4 +79,44 @@ ggplot(caro, aes(E,N, color = static))  +
   theme(legend.position = "bottom")+
   labs(title = "Caros static and non-static Trajectory")
 ```
+Task 4: Segment-based analysis
+Complete the guidelines, short trajectories must be removed now. For that we need a function to greate a unique ID for each sub-trajectory.
+```{r}
+rle_id <- function(vec){
+  x <- rle(vec)$lengths
+  as.factor(rep(seq_along(x), times=x))
+}
+
+```
+Apply function to caro and visualize the sub-trajectories(Don't forget to filter the Data by static to exclude non moving segments):
+```{r}
+caro <- caro %>%
+  mutate(segment_id = rle_id(static))
+
+caro_filter_2 <- caro %>%
+  filter(!static)
+
+ggplot(caro_filter_2, aes(E,N, color = segment_id), show.legend = FALSE)  +
+  geom_path() +
+  geom_point() +
+  coord_fixed() +
+  labs(title = "Caros sub-trajectories")+
+  theme(legend.position = "none")
+
+```
+Compare output with the output when only segments with duration >5min are shown (Long segments):
+```{r}
+caro_filter_3 <- caro_filter_2 %>% 
+  group_by(segment_id) %>% 
+  mutate(duration = as.integer(difftime(max(DatetimeUTC),min(DatetimeUTC), units = "mins"))) %>%
+  filter(duration >= 5)
+
+ggplot(caro_filter_3, aes(E,N, color = segment_id), show.legend = FALSE)  +
+  geom_path() +
+  geom_point() +
+  coord_fixed() +
+  labs(title = "Caros long sub-trajectories")+
+  theme(legend.position = "none")
+
+```
 
