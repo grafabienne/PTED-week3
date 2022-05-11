@@ -9,7 +9,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 Task 1: Import Data and Segmentation
-```{r}
+```{r message = FALSE}
 library(readr)        # to import tabular data (e.g. csv)
 library(ggplot2)      # to visualize data
 library(dplyr)        # to manipulate (tabular) data
@@ -29,7 +29,7 @@ Guidelines for Segmentation of trajectories:
 3. Remove “static points”: These are points where the average distance is less     than a given threshold. This segments the trajectory into subtrajectories
   -> Distances under the mean distance value are considered static in this example
 4. Now remove short subtrajectories: These are trajectories with a short          duration (whereas “short” is tbd)
-```{r}
+```{r message = FALSE}
 ## 2. Measure distance between points ##
 caro <- caro %>%
   mutate(
@@ -51,7 +51,7 @@ caro <- caro %>%
 
 ```
 Task 2: Specify and apply threshold d
-```{r}
+```{r message = FALSE}
 
 ## 3. Remove static points ##
 caro <- caro %>%                            
@@ -71,7 +71,7 @@ caro_filter%>%
   labs(title = "Caros segmented Trajectory")
 ```
 Task 3: Visualize segmented trajectories
-```{r}
+```{r message = FALSE}
 ggplot(caro, aes(E,N, color = static))  +
   geom_path() +
   geom_point() +
@@ -81,7 +81,7 @@ ggplot(caro, aes(E,N, color = static))  +
 ```
 Task 4: Segment-based analysis
 Complete the guidelines, short trajectories must be removed now. For that we need a function to greate a unique ID for each sub-trajectory.
-```{r}
+```{r message = FALSE}
 rle_id <- function(vec){
   x <- rle(vec)$lengths
   as.factor(rep(seq_along(x), times=x))
@@ -89,7 +89,7 @@ rle_id <- function(vec){
 
 ```
 Apply function to caro and visualize the sub-trajectories(Don't forget to filter the Data by static to exclude non moving segments):
-```{r}
+```{r message = FALSE}
 caro <- caro %>%
   mutate(segment_id = rle_id(static))
 
@@ -104,8 +104,8 @@ ggplot(caro_filter_2, aes(E,N, color = segment_id), show.legend = FALSE)  +
   theme(legend.position = "none")
 
 ```
-Compare output with the output when only segments with duration >5min are shown (Long segments):
-```{r}
+Compare output with the output when only segments with duration >=5min are shown (Long segments):
+```{r message = FALSE}
 caro_filter_3 <- caro_filter_2 %>% 
   group_by(segment_id) %>% 
   mutate(duration = as.integer(difftime(max(DatetimeUTC),min(DatetimeUTC), units = "mins"))) %>%
@@ -119,4 +119,24 @@ ggplot(caro_filter_3, aes(E,N, color = segment_id), show.legend = FALSE)  +
   theme(legend.position = "none")
 
 ```
+Task 5: Similarity measures
+```{r message= FALSE}
+## Import Data ##
+ped <- read_delim("pedestrian.csv",",")
+ped
 
+##Visualization of trajectories ##
+ped<- ped%>%
+  group_by(TrajID)
+ped
+
+ped$TrajID<- as.character(ped$TrajID)
+ggplot(ped, aes(E, N))+
+  geom_path() + 
+  geom_point(aes(color=TrajID)) + 
+  scale_color_manual(values = c("1" = "brown2", "2" = "coral", "3"="khaki2", "4"= "light green", "5"= "turquoise", "6"= " dark orchid2"))+
+  facet_wrap(~TrajID, nrow = 2, labeller = label_both)+
+  labs( title = "Visual comparison of  6 trajectories 01.03.2015",
+       subtitle = "Each subplot highlights a unique pedestrian trajectories")
+```
+The trajectories are very similar, but TrajID 4 shows a slightly different pattern and there is a clear outlier at 5. The trajectories also differ in terms of speed. This can be seen by the different density of the points (since the sampling rate is the same for all of them).
