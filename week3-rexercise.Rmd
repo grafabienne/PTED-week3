@@ -26,16 +26,17 @@ ggplot(caro, aes(E,N))+
   labs(title= "Caros Trajectory")
 ```
 
-Guidelines for Segmentation of trajectories: 1. Specify a temporal
+Guidelines for Segmentation of trajectories: 
+1. Specify a temporal
 windows v for in which to measure Euclidean distances -\>The sampling
-rate is 1min and the temporal window v should be 6min = +/- 3min 2.
-Measure the distance from every point to every other point within this
-temporal window (v) 3. Remove "static points": These are points where
+rate is 1min and the temporal window v should be 6min = +/- 3min 
+2.Measure the distance from every point to every other point within this
+temporal window (v) 
+3. Remove "static points": These are points where
 the average distance is less than a given threshold. This segments the
-trajectory into subtrajectories -\> Distances under the mean distance
-value are considered static in this example 4. Now remove short
-subtrajectories: These are trajectories with a short duration (whereas
-"short" is tbd)
+trajectory into subtrajectories -> Distances under the mean distance
+value are considered static in this example 
+4. Now remove short subtrajectories: These are trajectories with a short  duration (whereas "short" is tbd)
 
 ```{r message = FALSE}
 ## 2. Measure distance between points ##
@@ -261,6 +262,4 @@ ggplot(Similarity, aes(x = TrajID, y = value, fill= TrajID)) +
              scales = "free_y")+
   labs(title = "Computed similarities using different measures \nbetween trajectory 1 to all other trajectories")
 ```
-With the the method Edit Distance, every change/difference of the trajectories comes with a cost. A low value means they are very similar. The vlaue for LCSS represents a similarity score, here high values mean the trajectories are mor similar. DTW considers the sum of all squared distances. And the Frechet does the contrary, what is also nicely shown in the graph. However, I have tried various parameter settings and with every change the resluts are very different. Therefore, in a real project, one should consider the data propertiers and effects to find proper settings.
-
-```{r message=FALSE}
+With the method Edit Distance, every change/difference of the trajectories comes with a cost. A low value means they are very similar. The value for LCSS represents a similarity score, here high values mean the trajectories are more similar than those with lower scores. DTW considers the sum of all squared distances. And the Frechet does the contrary, what is also nicely shown in the graph. However, I have tried various parameter settings and with every change the results are very different. Therefore, in a real project, one should consider the data properties and effects to find proper settings.
