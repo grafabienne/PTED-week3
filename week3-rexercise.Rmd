@@ -2,6 +2,9 @@
 title: "Exercise 3"
 output: html_document
 date: '2022-05-06'
+editor_options: 
+  markdown: 
+    wrap: 72
 ---
 
 ```{r setup, include=FALSE}
@@ -9,10 +12,12 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 Task 1: Import Data and Segmentation
+
 ```{r message = FALSE}
 library(readr)        # to import tabular data (e.g. csv)
 library(ggplot2)      # to visualize data
 library(dplyr)        # to manipulate (tabular) data
+library(tidyr)
 caro <- read_delim("caro60.csv",",")
 caro
 ggplot(caro, aes(E,N))+
@@ -21,14 +26,17 @@ ggplot(caro, aes(E,N))+
   labs(title= "Caros Trajectory")
 ```
 
+Guidelines for Segmentation of trajectories: 1. Specify a temporal
+windows v for in which to measure Euclidean distances -\>The sampling
+rate is 1min and the temporal window v should be 6min = +/- 3min 2.
+Measure the distance from every point to every other point within this
+temporal window (v) 3. Remove "static points": These are points where
+the average distance is less than a given threshold. This segments the
+trajectory into subtrajectories -\> Distances under the mean distance
+value are considered static in this example 4. Now remove short
+subtrajectories: These are trajectories with a short duration (whereas
+"short" is tbd)
 
-Guidelines for Segmentation of trajectories:
-1. Specify a temporal windows v for in which to measure Euclidean distances
-  ->The sampling rate is 1min and the temporal window v should be 6min = +/- 3min
-2. Measure the distance from every point to every other point within this         temporal window (v)
-3. Remove “static points”: These are points where the average distance is less     than a given threshold. This segments the trajectory into subtrajectories
-  -> Distances under the mean distance value are considered static in this example
-4. Now remove short subtrajectories: These are trajectories with a short          duration (whereas “short” is tbd)
 ```{r message = FALSE}
 ## 2. Measure distance between points ##
 caro <- caro %>%
@@ -50,7 +58,9 @@ caro <- caro %>%
   ungroup() 
 
 ```
+
 Task 2: Specify and apply threshold d
+
 ```{r message = FALSE}
 
 ## 3. Remove static points ##
@@ -70,7 +80,9 @@ caro_filter%>%
   theme(legend.position = "bottom")+
   labs(title = "Caros segmented Trajectory")
 ```
+
 Task 3: Visualize segmented trajectories
+
 ```{r message = FALSE}
 ggplot(caro, aes(E,N, color = static))  +
   geom_path() +
@@ -79,8 +91,11 @@ ggplot(caro, aes(E,N, color = static))  +
   theme(legend.position = "bottom")+
   labs(title = "Caros static and non-static Trajectory")
 ```
-Task 4: Segment-based analysis
-Complete the guidelines, short trajectories must be removed now. For that we need a function to greate a unique ID for each sub-trajectory.
+
+Task 4: Segment-based analysis Complete the guidelines, short
+trajectories must be removed now. For that we need a function to greate
+a unique ID for each sub-trajectory.
+
 ```{r message = FALSE}
 rle_id <- function(vec){
   x <- rle(vec)$lengths
@@ -88,7 +103,10 @@ rle_id <- function(vec){
 }
 
 ```
-Apply function to caro and visualize the sub-trajectories(Don't forget to filter the Data by static to exclude non moving segments):
+
+Apply function to caro and visualize the sub-trajectories(Don't forget
+to filter the Data by static to exclude non moving segments):
+
 ```{r message = FALSE}
 caro <- caro %>%
   mutate(segment_id = rle_id(static))
@@ -104,7 +122,10 @@ ggplot(caro_filter_2, aes(E,N, color = segment_id), show.legend = FALSE)  +
   theme(legend.position = "none")
 
 ```
-Compare output with the output when only segments with duration >=5min are shown (Long segments):
+
+Compare output with the output when only segments with duration \>=5min
+are shown (Long segments):
+
 ```{r message = FALSE}
 caro_filter_3 <- caro_filter_2 %>% 
   group_by(segment_id) %>% 
@@ -119,7 +140,9 @@ ggplot(caro_filter_3, aes(E,N, color = segment_id), show.legend = FALSE)  +
   theme(legend.position = "none")
 
 ```
+
 Task 5: Similarity measures
+
 ```{r message= FALSE}
 ## Import Data ##
 ped <- read_delim("pedestrian.csv",",")
@@ -139,4 +162,105 @@ ggplot(ped, aes(E, N))+
   labs( title = "Visual comparison of  6 trajectories 01.03.2015",
        subtitle = "Each subplot highlights a unique pedestrian trajectories")
 ```
-The trajectories are very similar, but TrajID 4 shows a slightly different pattern and there is a clear outlier at 5. The trajectories also differ in terms of speed. This can be seen by the different density of the points (since the sampling rate is the same for all of them).
+
+The trajectories are very similar, but TrajID 4 shows a slightly
+different pattern and there is a clear outlier at 5. The trajectories
+also differ in terms of speed. This can be seen by the different density
+of the points (since the sampling rate is the same for all of them).
+
+Task 6: Install Library "SimilarityMeasures" & "tidyr"
+
+```{r message=FALSE}
+library(SimilarityMeasures)
+help(package = "SimilarityMeasures")
+```
+Calculate similarity Compare trajectory 1 to trajectories 2-6
+with different methodes.
+```{r message= FALSE}
+## Create matrix for each trajectory ##
+
+trj_1<-ped%>%
+  filter(TrajID == 1)%>%
+  ungroup()%>%
+  select(E,N)%>%
+  as.matrix()
+
+trj_2 <- ped %>%
+  filter(TrajID == 2) %>%
+  ungroup()%>%
+  select(E, N) %>%
+  as.matrix()
+
+trj_3 <- ped %>%
+  filter(TrajID == 3) %>%
+  ungroup()%>%
+  select(E, N) %>%
+  as.matrix()
+
+trj_4 <- ped %>%
+  filter(TrajID == 4) %>%
+  ungroup()%>%
+  select(E, N) %>%
+  as.matrix()
+
+trj_5 <- ped %>%
+  filter(TrajID == 5) %>%
+  ungroup()%>%
+  select(E, N) %>%
+  as.matrix()
+
+trj_6 <- ped %>%
+  filter(TrajID == 6) %>%
+  ungroup()%>%
+  select(E, N) %>%
+  as.matrix()
+
+DTW<- c(DTW(trj_1, trj_2),
+       DTW(trj_1, trj_3),
+       DTW(trj_1, trj_4),
+       DTW(trj_1, trj_5),
+       DTW(trj_1, trj_6))
+DTW
+
+EditDist<- c(EditDist(trj_1, trj_2),
+       EditDist(trj_1, trj_3),
+       EditDist(trj_1, trj_4),
+       EditDist(trj_1, trj_5),
+       EditDist(trj_1, trj_6))
+EditDist
+
+Frechet<-c(Frechet(trj_1, trj_2),
+       Frechet(trj_1, trj_3),
+       Frechet(trj_1, trj_4),
+       Frechet(trj_1, trj_5),
+       Frechet(trj_1, trj_6))
+Frechet
+
+LCSS<-c(LCSS(trj_1, trj_2,pointSpacing = 5 ,pointDistance = 3, errorMarg =0.7),
+      LCSS(trj_1, trj_3,pointSpacing = 5 ,pointDistance = 3, errorMarg = 0.7),
+      LCSS(trj_1, trj_4,pointSpacing = 5 ,pointDistance = 3, errorMarg = 0.7),
+      LCSS(trj_1, trj_5,pointSpacing = 5 ,pointDistance = 3, errorMarg = 0.7),
+      LCSS(trj_1, trj_6,pointSpacing = 5 ,pointDistance = 3, errorMarg = 0.7))
+LCSS
+
+## Combine data as data frame ##
+TrajID<-c("2","3","4","5","6")
+DTW<-as.integer(DTW)
+Frechet<-as.integer(Frechet)
+Similarity<- cbind(TrajID,DTW,EditDist,Frechet,LCSS)%>%
+  as.data.frame()%>%
+  pivot_longer(cols = c(DTW, EditDist, Frechet, LCSS))%>%
+  group_by(name)
+```
+
+Visualisation of results.
+```{r message=FALSE}
+ggplot(Similarity, aes(x = TrajID, y = value, fill= TrajID)) +
+  geom_bar(stat = "identity")+
+  facet_wrap(~name, nrow = 2,
+             scales = "free_y")+
+  labs(title = "Computed similarities using different measures \nbetween trajectory 1 to all other trajectories")
+```
+With the the method Edit Distance, every change/difference of the trajectories comes with a cost. A low value means they are very similar. The vlaue for LCSS represents a similarity score, here high values mean the trajectories are mor similar. DTW considers the sum of all squared distances. And the Frechet does the contrary, what is also nicely shown in the graph. However, I have tried various parameter settings and with every change the resluts are very different. Therefore, in a real project, one should consider the data propertiers and effects to find proper settings.
+
+```{r message=FALSE}
